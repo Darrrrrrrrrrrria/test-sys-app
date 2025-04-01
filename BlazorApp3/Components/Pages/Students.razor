@@ -1,14 +1,19 @@
 ﻿@page "/students"
-@inject NavigationManager Navigation
 @rendermode InteractiveServer
+@using BlazorApp3.Models
+@using Microsoft.EntityFrameworkCore
+@using BlazorApp3.Components.Models.ModelsDataBases
+@inject DataBaseContext DbContext
+@inject NavigationManager Navigation
+
 <h3>Список студентов</h3>
 
 <!-- Кнопки для действий -->
 <div class="mb-3">
     <button class="btn btn-primary" @onclick="OpenAddStudentModal">Добавить студента</button>
-    <button class="btn btn-warning" @onclick="OpenEditStudentModal" disabled="@(SelectedStudent == null)">Редактировать данные</button>
-    <button class="btn btn-danger" @onclick="DeleteStudent" disabled="@(SelectedStudent == null)">Удалить студента</button>
-    <button class="btn btn-info" @onclick="OpenJournalModal">Просмотреть журнал</button>
+    <button class="btn btn-warning" @onclick="OpenEditStudentModal" disabled="@(selectedStudent == null)">Редактировать данные</button>
+    <button class="btn btn-danger" @onclick="OpenDeleteStudentModal" disabled="@(selectedStudent == null)">Удалить студента</button>
+    <button class="btn btn-info" @onclick="OpenResultsModal" disabled="@(selectedStudent == null)">Просмотреть результаты</button>
 </div>
 
 <!-- Таблица студентов -->
@@ -16,13 +21,19 @@
     <thead>
         <tr>
             <th>ФИО</th>
+            <th>Логин</th>
+            <th>Дата рождения</th>
         </tr>
     </thead>
     <tbody>
         @foreach (var student in studentsList)
         {
-            <tr @onclick="() => SelectStudent(student)" @ondblclick="() => OpenStudentDetailsModal(student)" style="cursor: pointer;">
+            <tr @onclick="() => SelectStudent(student)" 
+                @ondblclick="() => OpenStudentDetailsModal(student)" 
+                style="cursor: pointer; @(selectedStudent == student ? "background-color: #f0f0f0;" : "")">
                 <td>@student.FullName</td>
+                <td>@student.Login</td>
+                <td>@student.BirthDate.ToShortDateString()</td>
             </tr>
         }
     </tbody>
@@ -47,18 +58,22 @@
                         <div class="form-group">
                             <label>ФИО:</label>
                             <InputText class="form-control" @bind-Value="newStudent.FullName" />
+                            <ValidationMessage For="@(() => newStudent.FullName)" />
                         </div>
                         <div class="form-group">
                             <label>Логин:</label>
                             <InputText class="form-control" @bind-Value="newStudent.Login" />
+                            <ValidationMessage For="@(() => newStudent.Login)" />
                         </div>
                         <div class="form-group">
                             <label>Пароль:</label>
                             <InputText type="password" class="form-control" @bind-Value="newStudent.Password" />
+                            <ValidationMessage For="@(() => newStudent.Password)" />
                         </div>
                         <div class="form-group">
                             <label>Дата рождения:</label>
                             <InputDate class="form-control" @bind-Value="newStudent.BirthDate" />
+                            <ValidationMessage For="@(() => newStudent.BirthDate)" />
                         </div>
                         <button type="submit" class="btn btn-primary">Добавить</button>
                         <button type="button" class="btn btn-secondary" @onclick="CloseAddStudentModal">Отмена</button>
@@ -70,7 +85,7 @@
 }
 
 <!-- Модальное окно для редактирования студента -->
-@if (showEditStudentModal)
+@if (showEditStudentModal && selectedStudent != null)
 {
     <div class="modal" style="display: block; background: rgba(0, 0, 0, 0.5);">
         <div class="modal-dialog">
@@ -80,23 +95,27 @@
                     <button type="button" class="close" @onclick="CloseEditStudentModal">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <EditForm Model="@SelectedStudent" OnValidSubmit="SaveEditedStudent">
+                    <EditForm Model="@selectedStudent" OnValidSubmit="SaveEditedStudent">
                         <DataAnnotationsValidator />
                         <div class="form-group">
                             <label>ФИО:</label>
-                            <InputText class="form-control" @bind-Value="SelectedStudent.FullName" />
+                            <InputText class="form-control" @bind-Value="selectedStudent.FullName" />
+                            <ValidationMessage For="@(() => selectedStudent.FullName)" />
                         </div>
                         <div class="form-group">
                             <label>Логин:</label>
-                            <InputText class="form-control" @bind-Value="SelectedStudent.Login" />
+                            <InputText class="form-control" @bind-Value="selectedStudent.Login" />
+                            <ValidationMessage For="@(() => selectedStudent.Login)" />
                         </div>
                         <div class="form-group">
                             <label>Пароль:</label>
-                            <InputText type="password" class="form-control" @bind-Value="SelectedStudent.Password" />
+                            <InputText type="password" class="form-control" @bind-Value="selectedStudent.Password" />
+                            <ValidationMessage For="@(() => selectedStudent.Password)" />
                         </div>
                         <div class="form-group">
                             <label>Дата рождения:</label>
-                            <InputDate class="form-control" @bind-Value="SelectedStudent.BirthDate" />
+                            <InputDate class="form-control" @bind-Value="selectedStudent.BirthDate" />
+                            <ValidationMessage For="@(() => selectedStudent.BirthDate)" />
                         </div>
                         <button type="submit" class="btn btn-primary">Сохранить</button>
                         <button type="button" class="btn btn-secondary" @onclick="CloseEditStudentModal">Отмена</button>
@@ -108,7 +127,7 @@
 }
 
 <!-- Модальное окно для просмотра информации о студенте -->
-@if (showStudentDetailsModal)
+@if (showStudentDetailsModal && selectedStudent != null)
 {
     <div class="modal" style="display: block; background: rgba(0, 0, 0, 0.5);">
         <div class="modal-dialog">
@@ -118,51 +137,77 @@
                     <button type="button" class="close" @onclick="CloseStudentDetailsModal">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <p><strong>ФИО:</strong> @SelectedStudent.FullName</p>
-                    <p><strong>Логин:</strong> @SelectedStudent.Login</p>
-                    <p><strong>Пароль:</strong> @SelectedStudent.Password</p>
-                    <p><strong>Дата рождения:</strong> @SelectedStudent.BirthDate.ToShortDateString()</p>
-                    <p><strong>Оценки:</strong></p>
-                    <ul>
-                        @foreach (var grade in SelectedStudent.Grades)
-                        {
-                            <li>@grade</li>
-                        }
-                    </ul>
-                    <p><strong>Прохождение курса:</strong> @SelectedStudent.CourseProgress%</p>
+                    <p><strong>ФИО:</strong> @selectedStudent.FullName</p>
+                    <p><strong>Логин:</strong> @selectedStudent.Login</p>
+                    <p><strong>Дата рождения:</strong> @selectedStudent.BirthDate.ToShortDateString()</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="CloseStudentDetailsModal">Закрыть</button>
                 </div>
             </div>
         </div>
     </div>
 }
 
-<!-- Модальное окно для журнала -->
-@if (showJournalModal)
+<!-- Модальное окно для просмотра результатов -->
+@if (showResultsModal && selectedStudent != null)
+{
+    <div class="modal" style="display: block; background: rgba(0, 0, 0, 0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Результаты студента: @selectedStudent.FullName</h5>
+                    <button type="button" class="close" @onclick="CloseResultsModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Тест</th>
+                                <th>Результат</th>
+                                <th>Дата прохождения</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (studentResults != null)
+                            {
+                                @foreach (var result in studentResults)
+                                {
+                                    <tr>
+                                        <td>@result.Test?.Name</td>
+                                        <td>@result.Score</td>
+                                        @* <td>@result.TestDate.ToShortDateString()</td> *@
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="CloseResultsModal">Закрыть</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Модальное окно подтверждения удаления -->
+@if (showDeleteStudentModal && selectedStudent != null)
 {
     <div class="modal" style="display: block; background: rgba(0, 0, 0, 0.5);">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Журнал успеваемости</h5>
-                    <button type="button" class="close" @onclick="CloseJournalModal">&times;</button>
+                    <h5 class="modal-title">Удаление студента</h5>
+                    <button type="button" class="close" @onclick="CloseDeleteStudentModal">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <div class="form-group">
-                        <label>Фильтровать по:</label>
-                        <select class="form-control" @bind="FilterType">
-                            <option value="performance">Успеваемость</option>
-                            <option value="testsPassed">Количество пройденных тестов</option>
-                            <option value="lastName">Фамилия</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Порядок сортировки:</label>
-                        <select class="form-control" @bind="SortOrder">
-                            <option value="asc">По возрастанию</option>
-                            <option value="desc">По убыванию</option>
-                        </select>
-                    </div>
-                    <button class="btn btn-primary" @onclick="ApplyFilters">Применить</button>
+                    <p>Вы уверены, что хотите удалить студента @selectedStudent.FullName?</p>
+                    <p class="text-danger">Все результаты тестов этого студента также будут удалены!</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-danger" @onclick="DeleteStudent">Удалить</button>
+                    <button class="btn btn-secondary" @onclick="CloseDeleteStudentModal">Отмена</button>
                 </div>
             </div>
         </div>
@@ -170,41 +215,59 @@
 }
 
 @code {
-    private List<StudentModel> studentsList = new List<StudentModel>
-    {
-        new StudentModel { FullName = "Иванов Иван", Login = "ivanov", Password = "12345", BirthDate = new DateTime(2000, 1, 1), Grades = new List<int> { 5, 4, 3 }, CourseProgress = 75 },
-        new StudentModel { FullName = "Петров Петр", Login = "petrov", Password = "54321", BirthDate = new DateTime(2001, 2, 2), Grades = new List<int> { 4, 4, 5 }, CourseProgress = 90 },
-        new StudentModel { FullName = "Сидорова Анна", Login = "sidorova", Password = "qwerty", BirthDate = new DateTime(1999, 3, 3), Grades = new List<int> { 3, 4, 5 }, CourseProgress = 60 }
-    };
-
-    private StudentModel SelectedStudent { get; set; }
-    private StudentModel newStudent = new StudentModel();
+    private List<Student> studentsList = new();
+    private Student? selectedStudent;
+    private Student newStudent = new();
+    private List<TestResult> studentResults = new();
+    
     private bool showAddStudentModal = false;
     private bool showEditStudentModal = false;
     private bool showStudentDetailsModal = false;
-    private bool showJournalModal = false;
-    private string FilterType = "performance";
-    private string SortOrder = "asc";
+    private bool showResultsModal = false;
+    private bool showDeleteStudentModal = false;
 
-    private void SelectStudent(StudentModel student)
+    protected override async Task OnInitializedAsync()
     {
-        SelectedStudent = student;
+        await LoadStudents();
+    }
+
+    private async Task LoadStudents()
+    {
+        studentsList = await DbContext.Students.ToListAsync();
+    }
+
+    private async Task LoadStudentResults()
+    {
+        if (selectedStudent != null)
+        {
+            studentResults = await DbContext.TestResults
+                .Include(tr => tr.Test)
+                .Where(tr => tr.StudentId == selectedStudent.Id)
+                .ToListAsync();
+        }
+    }
+
+    private void SelectStudent(Student student)
+    {
+        selectedStudent = student;
     }
 
     private void OpenAddStudentModal()
     {
+        newStudent = new Student { BirthDate = DateTime.Today };
         showAddStudentModal = true;
     }
 
     private void CloseAddStudentModal()
     {
         showAddStudentModal = false;
-        newStudent = new StudentModel();
     }
 
-    private void AddStudent()
+    private async Task AddStudent()
     {
-        studentsList.Add(newStudent);
+        DbContext.Students.Add(newStudent);
+        await DbContext.SaveChangesAsync();
+        await LoadStudents();
         CloseAddStudentModal();
     }
 
@@ -218,20 +281,38 @@
         showEditStudentModal = false;
     }
 
-    private void SaveEditedStudent()
+    private async Task SaveEditedStudent()
     {
+        await DbContext.SaveChangesAsync();
+        await LoadStudents();
         CloseEditStudentModal();
     }
 
-    private void DeleteStudent()
+    private void OpenDeleteStudentModal()
     {
-        studentsList.Remove(SelectedStudent);
-        SelectedStudent = null;
+        showDeleteStudentModal = true;
     }
 
-    private void OpenStudentDetailsModal(StudentModel student)
+    private void CloseDeleteStudentModal()
     {
-        SelectedStudent = student;
+        showDeleteStudentModal = false;
+    }
+
+    private async Task DeleteStudent()
+    {
+        if (selectedStudent != null)
+        {
+            DbContext.Students.Remove(selectedStudent);
+            await DbContext.SaveChangesAsync();
+            selectedStudent = null;
+            await LoadStudents();
+            CloseDeleteStudentModal();
+        }
+    }
+
+    private void OpenStudentDetailsModal(Student student)
+    {
+        selectedStudent = student;
         showStudentDetailsModal = true;
     }
 
@@ -240,34 +321,19 @@
         showStudentDetailsModal = false;
     }
 
-    private void OpenJournalModal()
+    private async Task OpenResultsModal()
     {
-        showJournalModal = true;
+        await LoadStudentResults();
+        showResultsModal = true;
     }
 
-    private void CloseJournalModal()
+    private void CloseResultsModal()
     {
-        showJournalModal = false;
-    }
-
-    private void ApplyFilters()
-    {
-        // Логика фильтрации и сортировки
-        CloseJournalModal();
+        showResultsModal = false;
     }
 
     private void NavigateToAdminMain()
     {
         Navigation.NavigateTo("/admin_main");
-    }
-
-    public class StudentModel
-    {
-        public string FullName { get; set; }
-        public string Login { get; set; }
-        public string Password { get; set; }
-        public DateTime BirthDate { get; set; }
-        public List<int> Grades { get; set; } = new List<int>();
-        public int CourseProgress { get; set; }
     }
 }
