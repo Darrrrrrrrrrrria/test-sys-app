@@ -8,20 +8,19 @@
 
 <h3>Список студентов</h3>
 
-<!-- Кнопки для действий -->
 <div class="mb-3">
     <button class="btn btn-primary" @onclick="OpenAddStudentModal">Добавить студента</button>
-    <button class="btn btn-warning" @onclick="OpenEditStudentModal" disabled="@(selectedStudent == null)">Редактировать данные</button>
-    <button class="btn btn-danger" @onclick="OpenDeleteStudentModal" disabled="@(selectedStudent == null)">Удалить студента</button>
-    <button class="btn btn-info" @onclick="OpenResultsModal" disabled="@(selectedStudent == null)">Просмотреть результаты</button>
+    <button class="btn btn-warning" @onclick="OpenEditStudentModal" disabled="@(selectedStudent == null)">Редактировать</button>
+    <button class="btn btn-danger" @onclick="OpenDeleteStudentModal" disabled="@(selectedStudent == null)">Удалить</button>
+    <button class="btn btn-info" @onclick="OpenResultsModal" disabled="@(selectedStudent == null)">Результаты тестов</button>
 </div>
 
-<!-- Таблица студентов -->
 <table class="table">
     <thead>
         <tr>
             <th>ФИО</th>
             <th>Логин</th>
+            <th>Пароль</th>
             <th>Дата рождения</th>
         </tr>
     </thead>
@@ -29,20 +28,20 @@
         @foreach (var student in studentsList)
         {
             <tr @onclick="() => SelectStudent(student)" 
-                @ondblclick="() => OpenStudentDetailsModal(student)" 
+                @ondblclick="() => OpenStudentDetailsModal(student)"
                 style="cursor: pointer; @(selectedStudent == student ? "background-color: #f0f0f0;" : "")">
                 <td>@student.FullName</td>
                 <td>@student.Login</td>
+                <td>@student.Password</td>
                 <td>@student.BirthDate.ToShortDateString()</td>
             </tr>
         }
     </tbody>
 </table>
 
-<!-- Кнопка "Назад" -->
-<button class="btn btn-secondary" @onclick="NavigateToAdminMain">Назад</button>
+<button class="btn btn-secondary mt-3" @onclick="NavigateToAdminMain">Назад</button>
 
-<!-- Модальное окно для добавления студента -->
+<!-- Модальное окно добавления студента -->
 @if (showAddStudentModal)
 {
     <div class="modal" style="display: block; background: rgba(0, 0, 0, 0.5);">
@@ -67,7 +66,7 @@
                         </div>
                         <div class="form-group">
                             <label>Пароль:</label>
-                            <InputText type="password" class="form-control" @bind-Value="newStudent.Password" />
+                            <InputText class="form-control" @bind-Value="newStudent.Password" />
                             <ValidationMessage For="@(() => newStudent.Password)" />
                         </div>
                         <div class="form-group">
@@ -84,14 +83,14 @@
     </div>
 }
 
-<!-- Модальное окно для редактирования студента -->
+<!-- Модальное окно редактирования студента -->
 @if (showEditStudentModal && selectedStudent != null)
 {
     <div class="modal" style="display: block; background: rgba(0, 0, 0, 0.5);">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Редактировать данные студента</h5>
+                    <h5 class="modal-title">Редактировать студента</h5>
                     <button type="button" class="close" @onclick="CloseEditStudentModal">&times;</button>
                 </div>
                 <div class="modal-body">
@@ -100,22 +99,18 @@
                         <div class="form-group">
                             <label>ФИО:</label>
                             <InputText class="form-control" @bind-Value="selectedStudent.FullName" />
-                            <ValidationMessage For="@(() => selectedStudent.FullName)" />
                         </div>
                         <div class="form-group">
                             <label>Логин:</label>
                             <InputText class="form-control" @bind-Value="selectedStudent.Login" />
-                            <ValidationMessage For="@(() => selectedStudent.Login)" />
                         </div>
                         <div class="form-group">
                             <label>Пароль:</label>
-                            <InputText type="password" class="form-control" @bind-Value="selectedStudent.Password" />
-                            <ValidationMessage For="@(() => selectedStudent.Password)" />
+                            <InputText class="form-control" @bind-Value="selectedStudent.Password" />
                         </div>
                         <div class="form-group">
                             <label>Дата рождения:</label>
                             <InputDate class="form-control" @bind-Value="selectedStudent.BirthDate" />
-                            <ValidationMessage For="@(() => selectedStudent.BirthDate)" />
                         </div>
                         <button type="submit" class="btn btn-primary">Сохранить</button>
                         <button type="button" class="btn btn-secondary" @onclick="CloseEditStudentModal">Отмена</button>
@@ -126,7 +121,7 @@
     </div>
 }
 
-<!-- Модальное окно для просмотра информации о студенте -->
+<!-- Модальное окно информации о студенте -->
 @if (showStudentDetailsModal && selectedStudent != null)
 {
     <div class="modal" style="display: block; background: rgba(0, 0, 0, 0.5);">
@@ -139,6 +134,7 @@
                 <div class="modal-body">
                     <p><strong>ФИО:</strong> @selectedStudent.FullName</p>
                     <p><strong>Логин:</strong> @selectedStudent.Login</p>
+                    <p><strong>Пароль:</strong> @selectedStudent.Password</p>
                     <p><strong>Дата рождения:</strong> @selectedStudent.BirthDate.ToShortDateString()</p>
                 </div>
                 <div class="modal-footer">
@@ -149,14 +145,14 @@
     </div>
 }
 
-<!-- Модальное окно для просмотра результатов -->
+<!-- Модальное окно результатов тестов -->
 @if (showResultsModal && selectedStudent != null)
 {
     <div class="modal" style="display: block; background: rgba(0, 0, 0, 0.5);">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Результаты студента: @selectedStudent.FullName</h5>
+                    <h5 class="modal-title">Результаты тестов: @selectedStudent.FullName</h5>
                     <button type="button" class="close" @onclick="CloseResultsModal">&times;</button>
                 </div>
                 <div class="modal-body">
@@ -165,20 +161,17 @@
                             <tr>
                                 <th>Тест</th>
                                 <th>Результат</th>
-                                <th>Дата прохождения</th>
+                                @*<th>Дата прохождения</th>*@
                             </tr>
                         </thead>
                         <tbody>
-                            @if (studentResults != null)
+                            @foreach (var result in studentResults)
                             {
-                                @foreach (var result in studentResults)
-                                {
-                                    <tr>
-                                        <td>@result.Test?.Name</td>
-                                        <td>@result.Score</td>
-                                        @* <td>@result.TestDate.ToShortDateString()</td> *@
-                                    </tr>
-                                }
+                                <tr>
+                                    <td>@result.Test?.Name</td>
+                                    <td>@result.Score</td>
+                                    @*<td>@result.TestDate.ToShortDateString()</td>*@
+                                </tr>
                             }
                         </tbody>
                     </table>
@@ -198,12 +191,12 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Удаление студента</h5>
+                    <h5 class="modal-title">Подтверждение удаления</h5>
                     <button type="button" class="close" @onclick="CloseDeleteStudentModal">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <p>Вы уверены, что хотите удалить студента @selectedStudent.FullName?</p>
-                    <p class="text-danger">Все результаты тестов этого студента также будут удалены!</p>
+                    <p>Вы уверены, что хотите удалить студента <strong>@selectedStudent.FullName</strong>?</p>
+                    <p class="text-danger">Все связанные результаты тестов также будут удалены!</p>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-danger" @onclick="DeleteStudent">Удалить</button>
@@ -233,7 +226,9 @@
 
     private async Task LoadStudents()
     {
-        studentsList = await DbContext.Students.ToListAsync();
+        studentsList = await DbContext.Students
+            .OrderBy(s => s.FullName)
+            .ToListAsync();
     }
 
     private async Task LoadStudentResults()
