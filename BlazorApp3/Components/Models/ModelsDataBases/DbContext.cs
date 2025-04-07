@@ -32,6 +32,10 @@ namespace BlazorApp3.Components.Models.ModelsDataBases
                 .WithMany(s => s.TestResults)
                 .HasForeignKey(tr => tr.StudentId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Добавляем индекс для быстрого поиска дубликатов
+            modelBuilder.Entity<TestResult>()
+                .HasIndex(tr => new { tr.TestId, tr.StudentId });
         }
     }
 }

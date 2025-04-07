@@ -12,7 +12,8 @@
     <button class="btn btn-primary" @onclick="OpenAddStudentModal">Добавить студента</button>
     <button class="btn btn-warning" @onclick="OpenEditStudentModal" disabled="@(selectedStudent == null)">Редактировать</button>
     <button class="btn btn-danger" @onclick="OpenDeleteStudentModal" disabled="@(selectedStudent == null)">Удалить</button>
-    <button class="btn btn-info" @onclick="OpenResultsModal" disabled="@(selectedStudent == null)">Результаты тестов</button>
+    <button class="btn btn-info" @onclick="OpenStudentDetailsModal" disabled="@(selectedStudent == null)">Данные</button>
+    <button class="btn btn-secondary" @onclick="OpenResultsModal" disabled="@(selectedStudent == null)">Результаты</button>
 </div>
 
 <table class="table">
@@ -20,7 +21,6 @@
         <tr>
             <th>ФИО</th>
             <th>Логин</th>
-            <th>Пароль</th>
             <th>Дата рождения</th>
         </tr>
     </thead>
@@ -28,18 +28,14 @@
         @foreach (var student in studentsList)
         {
             <tr @onclick="() => SelectStudent(student)" 
-                @ondblclick="() => OpenStudentDetailsModal(student)"
                 style="cursor: pointer; @(selectedStudent == student ? "background-color: #f0f0f0;" : "")">
                 <td>@student.FullName</td>
                 <td>@student.Login</td>
-                <td>@student.Password</td>
                 <td>@student.BirthDate.ToShortDateString()</td>
             </tr>
         }
     </tbody>
 </table>
-
-<button class="btn btn-secondary mt-3" @onclick="NavigateToAdminMain">Назад</button>
 
 <!-- Модальное окно добавления студента -->
 @if (showAddStudentModal)
@@ -66,7 +62,7 @@
                         </div>
                         <div class="form-group">
                             <label>Пароль:</label>
-                            <InputText class="form-control" @bind-Value="newStudent.Password" />
+                            <InputText type="password" class="form-control" @bind-Value="newStudent.Password" />
                             <ValidationMessage For="@(() => newStudent.Password)" />
                         </div>
                         <div class="form-group">
@@ -106,7 +102,7 @@
                         </div>
                         <div class="form-group">
                             <label>Пароль:</label>
-                            <InputText class="form-control" @bind-Value="selectedStudent.Password" />
+                            <InputText type="text" class="form-control" @bind-Value="selectedStudent.Password" />
                         </div>
                         <div class="form-group">
                             <label>Дата рождения:</label>
@@ -128,14 +124,26 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Информация о студенте</h5>
+                    <h5 class="modal-title">Данные студента: @selectedStudent.FullName</h5>
                     <button type="button" class="close" @onclick="CloseStudentDetailsModal">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <p><strong>ФИО:</strong> @selectedStudent.FullName</p>
-                    <p><strong>Логин:</strong> @selectedStudent.Login</p>
-                    <p><strong>Пароль:</strong> @selectedStudent.Password</p>
-                    <p><strong>Дата рождения:</strong> @selectedStudent.BirthDate.ToShortDateString()</p>
+                    <div class="form-group">
+                        <label><strong>ФИО:</strong></label>
+                        <div>@selectedStudent.FullName</div>
+                    </div>
+                    <div class="form-group">
+                        <label><strong>Логин:</strong></label>
+                        <div>@selectedStudent.Login</div>
+                    </div>
+                    <div class="form-group">
+                        <label><strong>Пароль:</strong></label>
+                        <div>@selectedStudent.Password</div>
+                    </div>
+                    <div class="form-group">
+                        <label><strong>Дата рождения:</strong></label>
+                        <div>@selectedStudent.BirthDate.ToShortDateString()</div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" @onclick="CloseStudentDetailsModal">Закрыть</button>
@@ -152,29 +160,36 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Результаты тестов: @selectedStudent.FullName</h5>
+                    <h5 class="modal-title">Последние результаты тестов: @selectedStudent.FullName</h5>
                     <button type="button" class="close" @onclick="CloseResultsModal">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Тест</th>
-                                <th>Результат</th>
-                                @*<th>Дата прохождения</th>*@
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var result in studentResults)
-                            {
+                    @if (studentResults.Any())
+                    {
+                        <table class="table">
+                            <thead>
                                 <tr>
-                                    <td>@result.Test?.Name</td>
-                                    <td>@result.Score</td>
-                                    @*<td>@result.TestDate.ToShortDateString()</td>*@
+                                    <th>Тест</th>
+                                    <th>Результат</th>
+                                    <th>Дата прохождения</th>
                                 </tr>
-                            }
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @foreach (var result in studentResults.OrderByDescending(r => r.TestDate))
+                                {
+                                    <tr>
+                                        <td>@result.Test?.Name</td>
+                                        <td>@result.Score</td>
+                                        <td>@result.TestDate.ToString("dd.MM.yyyy HH:mm")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <p>Студент еще не проходил тесты.</p>
+                    }
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" @onclick="CloseResultsModal">Закрыть</button>
@@ -238,8 +253,35 @@
             studentResults = await DbContext.TestResults
                 .Include(tr => tr.Test)
                 .Where(tr => tr.StudentId == selectedStudent.Id)
+                .GroupBy(tr => tr.TestId)
+                .Select(g => g.OrderByDescending(tr => tr.TestDate).First())
                 .ToListAsync();
         }
+    }
+
+    public async Task SaveTestResult(int testId, int studentId, int score)
+    {
+        var existingResult = await DbContext.TestResults
+            .FirstOrDefaultAsync(tr => tr.TestId == testId && tr.StudentId == studentId);
+
+        if (existingResult != null)
+        {
+            existingResult.Score = score;
+            existingResult.TestDate = DateTime.Now;
+        }
+        else
+        {
+            var newResult = new TestResult
+            {
+                TestId = testId,
+                StudentId = studentId,
+                Score = score,
+                TestDate = DateTime.Now
+            };
+            DbContext.TestResults.Add(newResult);
+        }
+        
+        await DbContext.SaveChangesAsync();
     }
 
     private void SelectStudent(Student student)
@@ -305,10 +347,12 @@
         }
     }
 
-    private void OpenStudentDetailsModal(Student student)
+    private void OpenStudentDetailsModal()
     {
-        selectedStudent = student;
-        showStudentDetailsModal = true;
+        if (selectedStudent != null)
+        {
+            showStudentDetailsModal = true;
+        }
     }
 
     private void CloseStudentDetailsModal()

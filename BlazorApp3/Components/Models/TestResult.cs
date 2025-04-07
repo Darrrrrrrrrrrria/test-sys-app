@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BlazorApp3.Models
@@ -8,17 +9,21 @@ namespace BlazorApp3.Models
         [Key]
         public int Id { get; set; }
 
+        [Required]
         [ForeignKey("TestModel")]
-        [Column("TestId")]
         public int TestId { get; set; }
         public TestModel? Test { get; set; }
 
+        [Required]
         [ForeignKey("Student")]
-        [Column("StudentId")]
         public int StudentId { get; set; }
         public Student? Student { get; set; }
 
-        [Column("Score")]
+        [Required]
+        [Range(0, 100)]
         public int Score { get; set; }
+
+        [Required]
+        public DateTime TestDate { get; set; } = DateTime.Now;
     }
 }
